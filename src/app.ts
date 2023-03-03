@@ -5,6 +5,7 @@ import { create, Client } from '@open-wa/wa-automate';
 import moment from 'moment';
 import exp from 'constants';
 import routes from './routes'
+import mysql from 'mysql2';
 
 
 
@@ -16,7 +17,8 @@ class App {
 
         this.middlewares()
         this.routes()
-        this.whatsBot()
+        this.database()
+        // this.whatsBot()
     }
 
     private middlewares (): void {
@@ -24,11 +26,29 @@ class App {
         this.express.use(cors())
     }
 
-    // private database (): void {
-    //     mongoose.connect('mongodb://localhost:27017/tsnode', {
-    //         useNewUrlParser: true
-    //     })
-    // }
+    private database () {
+        
+        const connection = mysql.createConnection({
+            host: 'localhost',
+            user: 'root',
+            password: '',
+            database: 'botdiscord'
+        })
+        try {
+            connection.connect()
+            console.log("Banco conectado com sucesso")
+            connection.query('SELECT * FROM commands', (err, results, fields) => {
+                if(err) {
+                    console.log("erro ao consultar: " + err.stack);
+                    return
+                }
+                console.log('Resultados: ', results)
+            })
+        }catch (err) {
+            console.error("Erro na conexão de banco de dados!", err)
+        }
+
+    }
 
     private routes (): void {
         this.express.use(routes)
@@ -51,32 +71,26 @@ class App {
         let data = moment().format("DD/MM/YYYY")
         client.onMessage(async message => {
             if(message.body === '!P' || message.body === '!p'){
-                await client.sendText(message.from, '** Resumo do Relatório Diário Serviços TI IES (' + data + ')📋: **\n\n' + 
-                '*•Aplicações (BlazeMeter)📱- STATUS:*  (100%) 🟢\n\n' +
-                '*•Firewall Campus (Conectividade) 📡 - STATUS:*  (40%) ⚠️\n' +
-                    '       *🔴 Campus Londrina:* Queda de energia no local, aguardando retorno da elétrica.\n' +
+                await client.sendText(message.from, '** Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋: **\n\n\n' + 
+                '    *•Aplicações (BlazeMeter, Zabbix)📱- STATUS:*  (100%) 🟢\n\n' +
+                '    *•Firewall Campus (Conectividade) 📡 - STATUS:*  (40%) ⚠️\n' +
+                    '           *🔴 Campus Londrina:* Queda de energia no local, aguardando retorno da elétrica.\n' +
                     '                       **Afeta o negócio! **\n\n' +
-                    '       *🟠 Campus Curitiba:* Rompimento de Fibra, acionado operadora e aberto chamado protocolo: 123456.\n' +
-                    '       *🟠 Campus Corumbá:* Rompimento de Fibra, acionado operadora e aberto chamado protocolo: 123456.\n' +
+                    '           *🟠 Campus Curitiba:* Rompimento de Fibra, acionado operadora e aberto chamado protocolo: 123456.\n' +
+                    '           *🟠 Campus Corumbá:* Rompimento de Fibra, acionado operadora e aberto chamado protocolo: 123456.\n' +
                     '                       **Não afeta o negócio. **\n\n' +
             
-                '*•Datacenter (Gerador, Links DC, SMH, Nobrake) 💾 - STATUS:*  (80%) ⚠️\n' +
-                    '        *🟠 SMH (Sistema de incêndio):* O sensor de incêndio continua sinalizando falha. Já está sendo verificado pelo gestor de redes Tales.\n' +
-                    '                       **Não afeta o negócio. **\n\n' +	
-                
-                '*•Infra Dynatrace (Uniasselvi) 🏢 - STATUS:*  (0%) ⚠️\n' + 
-                    '        *🟠Dynatrace :* Ferramenta de monitoração do ambiente Uniasselvi indisponível, verificando com responsáveis.)\n' +
+                '    *•Datacenter (Gerador, Links DC, SMH, Nobrake) 💾 - STATUS:*  (80%) ⚠️\n' +
+                    '            *🟠 SMH (Sistema de incêndio):* O sensor de incêndio continua sinalizando falha. Já está sendo verificado pelo gestor de redes Tales.\n' +
                     '                       **Não afeta o negócio. **')}
 
             if(message.body === '!RS' || message.body === '!rs'){
-                await client.sendText(message.from, '** Resumo do Relatório Diário Serviços TI IES (' + data + ') 📋: **\n\n' + 
-                        '        *•Aplicações (BlazeMeter)📱- STATUS:*  (100%) ✅\n\n' +
+                await client.sendText(message.from, '**Report Diário do Relatório de Serviços TI Unicesumar (' + data + ') 📋:**\n\n' + 
+                        '  *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:* ✅\n\n' +
             
-                        '        *•Firewall Campus (Conectividade) 📡 - STATUS:*  (100%) ✅\n\n' +
+                        '  *•Conectividade (Firewall, Links Campus) 📡 - STATUS:* ✅\n\n' +
                         
-                        '        *•Datacenter (Gerador, Links DC, SMH, Nobrake) 💾 - STATUS:*  (100%) ✅\n\n' +
-                            
-                        '        *•Infra Dynatrace (Uniasselvi) 🏢 - STATUS:* (100%) ✅\n\n')}
+                        '  *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:* ✅')}
             if(message.body[0] == '!' && message.body.length == 6 && message.body[3] == '/'){
                 var formata = ''
                 var total = ''
@@ -91,14 +105,12 @@ class App {
                 if(parseInt(total) < 10000){
                 await client.sendText(message.from,
                     
-                    '** Resumo do Relatório Diário Serviços TI IES (' + formata + '/2022) 📋: **\n\n' + 
-                '        *•Aplicações (BlazeMeter)📱- STATUS:*  (100%) ✅\n\n' +
-    
-                '        *•Firewall Campus (Conectividade) 📡 - STATUS:*  (100%) ✅\n\n' +
-                
-                '        *•Datacenter (Gerador, Links DC, SMH, Nobrake) 💾 - STATUS:*  (100%) ✅\n\n' +
-                    
-                '        *•Infra Dynatrace (Uniasselvi) 🏢 - STATUS:* (100%) ✅\n\n')
+                    '**Report Diário do Relatório de Serviços TI Unicesumar (' + formata +'/2022 ) 📋:**\n\n' + 
+                        '  *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:* ✅\n\n' +
+            
+                        '  *•Conectividade (Firewall, Links Campus) 📡 - STATUS:* ✅\n\n' +
+                        
+                        '  *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:* ✅')
 
                 console.log(message.body.length)
                 console.log(message.body)

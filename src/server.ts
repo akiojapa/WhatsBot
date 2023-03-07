@@ -4,7 +4,7 @@ import app from './app'
 function main() {
 
     try {
-        app.listen(3333, 'localhost', async () => {
+        app.listen(8080, 'localhost', async () => {
             console.log("Starting server")
         })
 

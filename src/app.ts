@@ -5,8 +5,7 @@ import { create, Client } from '@open-wa/wa-automate';
 import moment from 'moment';
 import exp from 'constants';
 import routes from './routes'
-import mysql from 'mysql2'
-
+import db from './models/db'
 
 
 
@@ -20,7 +19,6 @@ class App {
         
         this.middlewares()
         this.routes()
-        this.databaseConn()
         this.whatsBot()
     }
 
@@ -28,28 +26,6 @@ class App {
         this.express.use(express.json())
         this.express.use(cors())
     }
-
-
-    private databaseConn () {
-            
-        const connection = mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            password: '',
-            database: 'botdiscord'
-        })
-        try {
-            connection.connect()
-            console.log('Banco de dados conectado com sucesso!')
-            return 
-
-        }catch (err) {
-            console.error("Erro na conexão de banco de dados!", err)
-        }
-
-    }
-
-
 
     private routes (): void {
         this.express.use(routes)
@@ -81,52 +57,84 @@ class App {
         
         client.onMessage(async message => {
 
-            if(message.body[0] == '!' && message.body[1] < 10 && message.body.length > 450){
-                try{
-                    let data = []
-                    let aux = ''
-                    for(let i=0; i < message.body.length; i++){
-                        if(message.body[i] != '\t'){
-                            if (message.body[i] != '!'){
-                                aux = aux + message.body[i]
+            if(message.body == '!teste'){
+                db.connect().then(() => {
+                    return Promise.all([
+                        db.searchInfo(4, 20), // primeiro intervalo
+                        db.searchInfo(21, 35), // segundo intervalo
+                        db.searchInfo(36, 50) // terceiro intervalo
+                    ])
+                }).then(([interval1, interval2, interval3]) => {
+
+                    function formatMessage(result, allWorkingOk, affects, notAffects) {
+                        if (allWorkingOk) {
+                            return `${result} ✅`;
+                        } else {
+                            let message = `${result} ⚠️`;
+            
+                            if (affects.length !== 0) {
+                                for (let i = 0; i < affects.length; i = i + 2) {
+                                    message += `\n\t🔴 ${affects[i + 1]}`;
+                                }
+                                message += "\n\t\t" + `${affects.length <= 2 ? ' **Afeta o negócio!**' : ' **Afetam o negócio!**'}`;
+                            }
+            
+                            if (notAffects.length !== 0) {
+                                for (let i = 0; i < notAffects.length; i = i + 2) {
+                                    message += `\n\t🟠 ${notAffects[i + 1]}`;
+                                }
+                                message += "\n\t\t" + `${notAffects.length <= 2 ? ' **Não afeta o negócio.*' : ' **Não afetam o negócio.**'}`;
+                            }
+            
+                            return message;
+                        }
+                    }
+                    const mens = formatMessage('    •*Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', interval1.result, interval1.affects, interval1.notAffects) + '\n\n' +  formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', interval2.result, interval2.affects, interval2.notAffects) + '\n\n' + formatMessage ('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', interval3.result, interval3.affects, interval3.notAffects)
+
+                    
+                    return mens
+
+                }).then((msg) => {
+ 
+                    client.sendText(message.from,'** Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋: **\n\n' + msg)
+                })
+
+                
+
+
+            }  
+                // função formatMessage é definida aqui e tem acesso às informações dos resultados dos intervalos
+                    
+                if(message.body[0] == '!' && message.body[1] < 10 && message.body.length > 450){
+                    try{
+                        let data = []
+                        let aux = ''
+                        for(let i=0; i < message.body.length; i++){
+                            if(message.body[i] != '\t'){
+                                if (message.body[i] != '!'){
+                                    aux = aux + message.body[i]
+                                }
+                                
+                            }
+                            else{
+                                data.push(aux)
+                                aux = ''
+                                
                             }
                             
                         }
-                        else{
-                            data.push(aux)
-                            aux = ''
-                            
-                        }
+                        
+                        db.insertDB(data)
                         
                     }
-                    
-                    const dataArray = ['ID', 'Starttime','Email', 'Name', 'CentraldeCaptacaoEAD', 'DescricaodoproblemaCentraldeCaptacaoEAD', 'Webclass', 'DescricaodoproblemaWebclass', 'WebServicesSydle', 'DescricaodoproblemaWebServicesSydle','GSuite', 'DescricaodoproblemaGSuite','Lyceum', 'DescricaodoproblemaLyceum','LyceumApiBoleto','DescricaodoproblemaLyceumApiBoleto', 'MundoAzul','DescricaodoproblemaMundoAzul', 'Plug', 'DescricaoodoproblemaPlug', 'PortalEAD','DescricaoodoproblemaPortalEAD', 'SistemasTerceiros','DescricaodoproblemaSistemasTerceiros', 'SitesEADePresencial', 'DescricaodoproblemaSitesEADePresencial', 'StudeoFront', 'DescricaodoproblemaStudeoFront', 'StudeoMonitoramentoBigIP','DescricaodoproblemaStudeoMonitoramentoBigIP', 'StudeoProducaoLogin','DescricaodoproblemaStudeoProducaoLogin','StudeoProducaoLogineDisciplina', 'DescricaodoproblemaStudeoProducaoLogineDisciplina','UniversoEAD','DescricaodoproblemaUniversoEAD','FirewallCampusCorumbaMemoriaLinksdeinternetSwitches', 'ProblemasemCorumba', 'FirewallCampusCuritibaMemoriaLinksdeinternetSwitches', 'ProblemasemCuritiba','FirewallCampusLondrinaMemoriaLinksdeinternetSwitches', 'ProblemasemLondrina', 'FirewallCampusMaringaMemoriaLinksdeinternetSwitches', 'ProblemasemMaringa', 'FirewallCampusPontaGrossaMemoriaLinksdeinternetSwitches', 'ProblemasemPontaGrossa', 'FirewallDataCenterMaringaMemoriaLinksdeinternet','ProblemasemFirewallDatacenter', 'InfraDatacenterBateriasHardwareCamerasSistemasdeprotecaoGerador', 'ProblemasemInfraDatacenter']
+                    catch(err){
+                        console.log(err)
+                    }
 
-                    const tableName = 'my_table';
-
-                    const dataObject = {};
-
-                    dataArray.forEach((column, index) => {
-                        dataObject[column] = data[index]
-                    })
-                    
-                    
-                        const query = `INSERT INTO ${tableName} SET ?`;
-                        connection.query(query,dataObject, (err, results, fields) => {
-                            if(err) throw err;
-                            console.log("Dados inseridos")
-                        })
-                        
-
-                    
-                }
-                catch(err){
-                    console.log(err)
+                    await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
                 }
 
-                await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
-            }
-
+    
             if(message.body === '!P' || message.body === '!p'){
                 await client.sendText(message.from, '** Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋: **\n\n\n' + 
                 '    *•Aplicações (BlazeMeter, Zabbix)📱- STATUS:*  (100%) 🟢\n\n' +

@@ -3,7 +3,6 @@ import cors from 'cors'
 import mongoose, { connection } from 'mongoose'
 import { create, Client } from '@open-wa/wa-automate';
 import moment from 'moment';
-import exp from 'constants';
 import routes from './routes'
 import db from './models/db'
 
@@ -46,18 +45,12 @@ class App {
 
     private start(client) {
 
-        const connection = mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            password: '',
-            database: 'whatsappbot'
-        })
 
         let data = moment().format("DD/MM/YYYY")
         
         client.onMessage(async message => {
 
-            if(message.body == '!teste'){
+            if(message.body === '!RS' || message.body === '!rs'){
                 db.connect().then(() => {
                     return Promise.all([
                         db.searchInfo(4, 20), // primeiro intervalo
@@ -76,7 +69,7 @@ class App {
                                 for (let i = 0; i < affects.length; i = i + 2) {
                                     message += `\n\t🔴 ${affects[i + 1]}`;
                                 }
-                                message += "\n\t\t" + `${affects.length <= 2 ? ' **Afeta o negócio!**' : ' **Afetam o negócio!**'}`;
+                                message += "\n\t\t" + `${affects.length <= 2 ? ' **Afeta o negócio!**\n' : ' **Afetam o negócio!**\n'}`;
                             }
             
                             if (notAffects.length !== 0) {
@@ -89,14 +82,14 @@ class App {
                             return message;
                         }
                     }
-                    const mens = formatMessage('    •*Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', interval1.result, interval1.affects, interval1.notAffects) + '\n\n' +  formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', interval2.result, interval2.affects, interval2.notAffects) + '\n\n' + formatMessage ('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', interval3.result, interval3.affects, interval3.notAffects)
+                    const mens = formatMessage('    *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', interval1.result, interval1.affects, interval1.notAffects) + '\n\n' +  formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', interval2.result, interval2.affects, interval2.notAffects) + '\n\n' + formatMessage ('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', interval3.result, interval3.affects, interval3.notAffects)
 
                     
                     return mens
 
                 }).then((msg) => {
  
-                    client.sendText(message.from,'** Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋: **\n\n' + msg)
+                    client.sendText(message.from,'*Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋:* \n\n' + msg)
                 })
 
                 
@@ -149,13 +142,6 @@ class App {
                     '            *🟠 SMH (Sistema de incêndio):* O sensor de incêndio continua sinalizando falha. Já está sendo verificado pelo gestor de redes Tales.\n' +
                     '                       **Não afeta o negócio. **')}
 
-            if(message.body === '!RS' || message.body === '!rs'){
-                await client.sendText(message.from, '**Report Diário do Relatório de Serviços TI Unicesumar (' + data + ') 📋:**\n\n' + 
-                        '  *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*  ✅\n\n' +
-            
-                        '  *•Conectividade (Firewall, Links Campus) 📡 - STATUS:* ✅\n\n' +
-                        
-                        '  *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:* ✅')}
             if(message.body[0] == '!' && message.body.length == 6 && message.body[3] == '/'){
                 var formata = ''
                 var total = ''
@@ -187,7 +173,7 @@ class App {
 
 
             if(message.body === '!help' || message.body === '!HELP' || message.body == '!Help'){
-                await client.sendText(message.from, 'Aqui está a lista de comandos disponíveis: \n !rs - Resumo diário do dia de hoje \n !p - Demonstração do sistema com problemas \n !(data no formato dd/mm)')
+                await client.sendText(message.from, 'Aqui está a lista de comandos disponíveis: \n !rs - Último report diário realizado. \n !p - Demonstração do sistema com problemas \n !(data no formato dd/mm)')
             }
 
             if(message.body === '!'){

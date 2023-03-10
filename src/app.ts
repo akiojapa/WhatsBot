@@ -53,6 +53,17 @@ class App {
             if(message.body === '!RS' || message.body === '!rs'){
                 db.connect().then(() => {
                     return Promise.all([
+                        db.getToday()
+                    ])
+                }).then(([today]) => {
+                    return today
+                }).then((today) => {
+                    console.log(today[0].Starttime)
+                    data = today[0].Starttime
+                })
+                
+                db.connect().then(() => {
+                    return Promise.all([
                         db.searchInfo(4, 20), // primeiro intervalo
                         db.searchInfo(21, 35), // segundo intervalo
                         db.searchInfo(36, 50) // terceiro intervalo
@@ -125,6 +136,7 @@ class App {
                     }
 
                     await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
+                    
                 }
 
     

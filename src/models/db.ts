@@ -1,4 +1,5 @@
 import mysql from 'mysql2'
+import { resolve } from 'path';
 
 
 class DataBase{ 
@@ -51,6 +52,21 @@ class DataBase{
                     if(err) throw err;
                         console.log("Dados inseridos")
                     })
+
+    }
+
+    getToday() {
+        return new Promise((resolve, reject) => {
+            const query = "SELECT Starttime FROM my_table ORDER BY id DESC LIMIT 1";
+            this.connection.query(query, (err, rows) => {
+                if(err) {
+                    reject(err)
+                }
+                else {
+                    resolve(rows)
+                }
+            })
+        })
 
     }
 

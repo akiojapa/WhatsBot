@@ -36,7 +36,9 @@ class DataBase{
 
     insertDB(dataInfo){
 
-        const dataArray = ['ID', 'Starttime','Email', 'Name', 'CentraldeCaptacaoEAD', 'DescricaodoproblemaCentraldeCaptacaoEAD', 'Webclass', 'DescricaodoproblemaWebclass', 'WebServicesSydle', 'DescricaodoproblemaWebServicesSydle','GSuite', 'DescricaodoproblemaGSuite','Lyceum', 'DescricaodoproblemaLyceum','LyceumApiBoleto','DescricaodoproblemaLyceumApiBoleto', 'MundoAzul','DescricaodoproblemaMundoAzul', 'Plug', 'DescricaoodoproblemaPlug', 'PortalEAD','DescricaoodoproblemaPortalEAD', 'SistemasTerceiros','DescricaodoproblemaSistemasTerceiros', 'SitesEADePresencial', 'DescricaodoproblemaSitesEADePresencial', 'StudeoFront', 'DescricaodoproblemaStudeoFront', 'StudeoMonitoramentoBigIP','DescricaodoproblemaStudeoMonitoramentoBigIP', 'StudeoProducaoLogin','DescricaodoproblemaStudeoProducaoLogin','StudeoProducaoLogineDisciplina', 'DescricaodoproblemaStudeoProducaoLogineDisciplina','UniversoEAD','DescricaodoproblemaUniversoEAD','FirewallCampusCorumbaMemoriaLinksdeinternetSwitches', 'ProblemasemCorumba', 'FirewallCampusCuritibaMemoriaLinksdeinternetSwitches', 'ProblemasemCuritiba','FirewallCampusLondrinaMemoriaLinksdeinternetSwitches', 'ProblemasemLondrina', 'FirewallCampusMaringaMemoriaLinksdeinternetSwitches', 'ProblemasemMaringa', 'FirewallCampusPontaGrossaMemoriaLinksdeinternetSwitches', 'ProblemasemPontaGrossa', 'FirewallDataCenterMaringaMemoriaLinksdeinternet','ProblemasemFirewallDatacenter', 'InfraDatacenterBateriasHardwareCamerasSistemasdeprotecaoGerador', 'ProblemasemInfraDatacenter']
+        
+
+        const dataArray = ['Starttime','Email', 'Name', 'CentraldeCaptacaoEAD', 'DescricaodoproblemaCentraldeCaptacaoEAD', 'Webclass', 'DescricaodoproblemaWebclass', 'WebServicesSydle', 'DescricaodoproblemaWebServicesSydle','GSuite', 'DescricaodoproblemaGSuite','Lyceum', 'DescricaodoproblemaLyceum','LyceumApiBoleto','DescricaodoproblemaLyceumApiBoleto', 'MundoAzul','DescricaodoproblemaMundoAzul', 'Plug', 'DescricaoodoproblemaPlug', 'PortalEAD','DescricaoodoproblemaPortalEAD', 'SistemasTerceiros','DescricaodoproblemaSistemasTerceiros', 'SitesEADePresencial', 'DescricaodoproblemaSitesEADePresencial', 'StudeoFront', 'DescricaodoproblemaStudeoFront', 'StudeoMonitoramentoBigIP','DescricaodoproblemaStudeoMonitoramentoBigIP', 'StudeoProducaoLogin','DescricaodoproblemaStudeoProducaoLogin','StudeoProducaoLogineDisciplina', 'DescricaodoproblemaStudeoProducaoLogineDisciplina','UniversoEAD','DescricaodoproblemaUniversoEAD','FirewallCampusCorumbaMemoriaLinksdeinternetSwitches', 'ProblemasemCorumba', 'FirewallCampusCuritibaMemoriaLinksdeinternetSwitches', 'ProblemasemCuritiba','FirewallCampusLondrinaMemoriaLinksdeinternetSwitches', 'ProblemasemLondrina', 'FirewallCampusMaringaMemoriaLinksdeinternetSwitches', 'ProblemasemMaringa', 'FirewallCampusPontaGrossaMemoriaLinksdeinternetSwitches', 'ProblemasemPontaGrossa', 'FirewallDataCenterMaringaMemoriaLinksdeinternet','ProblemasemFirewallDatacenter', 'InfraDatacenterBateriasHardwareCamerasSistemasdeprotecaoGerador', 'ProblemasemInfraDatacenter']
 
         const tableName = 'my_table';
 
@@ -82,15 +84,23 @@ class DataBase{
                     let notAffects = [];
                     const result = rows.map(row => Object.values(row));
                     const removedArray = result.splice(0, 1)[0];
-                    const newResult = result.concat(removedArray);
+                    const newResult: String = result.concat(removedArray);
                     // console.log(newResult)
                     // console.log(startIndex)
                     // console.log(endIndex)
-                    for (let i = startIndex; i <= endIndex; i++) {
-                        if (newResult[i] == 'EM FALHA - Afeta o negócio' || newResult[i] == 'Funcionando PARCIAL - Afeta o negócio') {
+                    for (let i: Number = startIndex; i <= endIndex; i++) {
+                        console.log(newResult[i] + '\t' + typeof
+                        (newResult[i]) + '\t' + newResult[i].length)
+
+
+                        if(newResult[i].includes("Afeta o negócio")){
+                            console.log("Chegou aqui part 2")
                             allWorkingOk = false;
                             affects.push(newResult[i], newResult[i + 1]);
-                        } else if (newResult[i] == 'EM FALHA - Não afeta o negócio' || newResult[i] == 'Funcionando PARCIAL - Não afeta o negócio') {
+                        } 
+
+                        if(newResult[i].includes("Não afeta o negócio")){
+                            console.log("Chegou aqui")
                             allWorkingOk = false;
                             notAffects.push(newResult[i], newResult[i + 1]);
                         }

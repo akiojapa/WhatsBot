@@ -64,9 +64,9 @@ class App {
                 
                 db.connect().then(() => {
                     return Promise.all([
-                        db.searchInfo(4, 20), // primeiro intervalo
-                        db.searchInfo(21, 35), // segundo intervalo
-                        db.searchInfo(36, 50) // terceiro intervalo
+                        db.searchInfo(4, 35), // primeiro intervalo
+                        db.searchInfo(36, 45), // segundo intervalo
+                        db.searchInfo(46, 49) // terceiro intervalo
                     ])
                 }).then(([interval1, interval2, interval3]) => {
 
@@ -113,7 +113,7 @@ class App {
                     try{
                         let data = []
                         let aux = ''
-                        for(let i=0; i < message.body.length; i++){
+                        for(let i=4; i < message.body.length; i++){
                             if(message.body[i] != '\t'){
                                 if (message.body[i] != '!'){
                                     aux = aux + message.body[i]
@@ -136,6 +136,8 @@ class App {
                     }
 
                     await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
+
+                    await client.sendText()
                     
                 }
 
@@ -190,6 +192,8 @@ class App {
 
             if(message.body === '!'){
                 await client.sendText(message.from, 'O "!" é o iniciador de comandos, em dúvida dos comandos existentes digite "!help"')
+
+                await client.sendText('554488471531-20230217@g.us', "Teste!")
             }
 
         })

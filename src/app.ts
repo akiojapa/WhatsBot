@@ -5,8 +5,11 @@ import { create, Client } from '@open-wa/wa-automate';
 import moment from 'moment';
 import routes from './routes'
 import db from './models/db'
+import { format } from 'path';
 
+//Grupo de teste: 120363048680196034@g.us
 
+// Grupo oficial: 554491373732-1614010500@g.us
 
 class App {
     public express: express.Application
@@ -48,7 +51,10 @@ class App {
 
         let data = moment().format("DD/MM/YYYY")
 
+
+
         function formatMessage(result, allWorkingOk, affects, notAffects) {
+
             if (allWorkingOk) {
                 return `${result} ✅`;
             } else {
@@ -74,157 +80,77 @@ class App {
         
         client.onMessage(async message => {
 
+
+
             if(message.body === '!RS' || message.body === '!rs' || message.body === '!p' || message.body === '!P'){
-                db.connect().then(() => {
-                    return Promise.all([
-                        db.getToday()
-                    ])
-                }).then(([today]) => {
-                    return today
-                }).then((today) => {
-                    console.log(today[0].Starttime)
-                    data = today[0].Starttime
-                })
-                
-                db.connect().then(() => {
-                    return Promise.all([
-                        db.searchInfo(4, 35), // primeiro intervalo
-                        db.searchInfo(36, 45), // segundo intervalo
-                        db.searchInfo(46, 49) // terceiro intervalo
-                    ])
-                }).then(([interval1, interval2, interval3]) => {
+                try {
+                let date = await db.getDate('general_checklist')
+                console.log(date)
+                let mens: String = '';
 
-                    const mens = formatMessage('    *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', interval1.result, interval1.affects, interval1.notAffects) + '\n\n' +  formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', interval2.result, interval2.affects, interval2.notAffects) + '\n\n' + formatMessage ('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', interval3.result, interval3.affects, interval3.notAffects)
-
-                    
-                    return mens
-
-                }).then((msg) => {
-                    
-                    if(message.body === '!p' || message.body === '!P'){
-                        client.sendText(message.from,'*Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋:* \n\n' + msg)
-                    }
-
-                    if(message.body === '!rs' || message.body === '!RS'){
-                    client.sendText('120363048680196034@g.us', '*Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋:* \n\n' + msg)
-                    }
-                })
-
-                
-
-
-            }  
-                // função formatMessage é definida aqui e tem acesso às informações dos resultados dos intervalos
-                    
-                if(message.body[0] == '!' && message.body[1] < 10 && message.body.length > 450){
-                    try{
-                        let data = []
-                        let aux = ''
-                        for(let i=4; i < message.body.length; i++){
-                            if(message.body[i] != '\t'){
-                                if (message.body[i] != '!'){
-                                    aux = aux + message.body[i]
-                                }
-                                
-                            }
-                            else{
-                                data.push(aux)
-                                aux = ''
-                                
-                            }
-                            
-                        }
-                        db.insertDB(data)
-                        await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
-                        db.connect().then(() => {
-                        return Promise.all([
-                            db.getToday()
-                        ])
-                    }).then(([today]) => {
-                        return today
-                    }).then((today) => {
-                        console.log(today[0].Starttime)
-                        data = today[0].Starttime
-                    })
-                    
-                    db.connect().then(() => {
-                        return Promise.all([
-                            db.searchInfo(4, 35), // primeiro intervalo
-                            db.searchInfo(36, 45), // segundo intervalo
-                            db.searchInfo(46, 49) // terceiro intervalo
-                        ])
-                    }).then(([interval1, interval2, interval3]) => {
-
-                        const mens = formatMessage('    *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', interval1.result, interval1.affects, interval1.notAffects) + '\n\n' +  formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', interval2.result, interval2.affects, interval2.notAffects) + '\n\n' + formatMessage ('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', interval3.result, interval3.affects, interval3.notAffects)
-
-                        
-                        return mens
-
-                    }).then((msg) => {
-                        
-                        client.sendText(message.from, '*Report Diário do Relatório de Serviços TI Unicesumar (' + data + ')📋:* \n\n' + msg)
-                        
-                    })
-                        
-                        
-                    }
-                    catch(err){
-                        console.log(err)
-                    }                    
-                }
-
-            if(message.body[0] == '!' && message.body.length == 6 && message.body[3] == '/'){
-                var formata = ''
-                var total = ''
-
-                for(let i = 1; i < 6; i++){
-                    formata = formata + message.body[i]
-                    if(message.body[i] != '/'){
-                        total = total + message.body[i]
-                    }
-                }
-                console.log(formata)
-                if(parseInt(total) < 10000){
-                await client.sendText(message.from,
-                    
-                    '**Report Diário do Relatório de Serviços TI Unicesumar (' + formata +'/2022 ) 📋:**\n\n' + 
-                        '  *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:* ✅\n\n' +
+                let aux = await db.readDailyReport('general_checklist',2,33)
+                mens = formatMessage('    *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects)
+                console.log(aux.allWorkingOk)
             
-                        '  *•Conectividade (Firewall, Links Campus) 📡 - STATUS:* ✅\n\n' +
-                        
-                        '  *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:* ✅')
-
-                console.log(message.body.length)
-                console.log(message.body)
-                console.log(message.body[2])
+                aux = await db.readDailyReport('general_checklist',34,43)
+                mens += '\n\n' + formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects)
+                console.log(mens)
+                
+                aux = await db.readDailyReport('datacenter_checklist',2,19)
+                mens += '\n\n' + formatMessage('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects)
+                
+                await client.sendText(message.from, '*Report Diário do Relatório de Serviços TI Unicesumar (' + date[0].gc_date + ')📋:* \n\n' + mens)
+            } catch(err) {
+                console.log(err)
             }
-            else{
-                await client.sendText(message.from, "*Mensagem inválida, digite !help para obter ajuda!*")
-            }}
+            
+            }
 
+            if(message.body[0] == '!' && message.body.length >=300){
+                message.body = message.body + '\t'
+                try{
+                    let data: Array<String> = []
+                    let aux = ''
+                    console.log(message.body)
+                    console.log(message.body.length)
+                    for(let i = 0; i < message.body.length; i++){
+                    if(data.length < 50){
+                        if(message.body[i] != '\t' ){
+                            if (message.body[i] != '!'){
+                                aux = aux + message.body[i]
+                            }
+
+                        }
+                        else{
+                        data.push( '"' + aux + '"')
+                        aux = ''
+                        }
+                    }
+                }
+                console.log(data)
+                if (data.length > 22){
+                    data.splice(42)
+                    db.insertColumns('general_checklist', data)
+                    await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
+                }
+                else{ 
+                    data.splice(0,2)
+                    data.splice(1,1)
+                    console.log(data)
+                    db.insertColumns('datacenter_checklist', data)
+                    await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
+                }
+
+            } catch(err) {
+                console.error(err)
+            }
+            
+            
+        }
 
             if(message.body === '!help' || message.body === '!HELP' || message.body == '!Help'){
                 await client.sendText(message.from, 'Aqui está a lista de comandos disponíveis: \n !rs - Último report diário realizado. \n !p - Demonstração do sistema com problemas \n !(data no formato dd/mm)')
             }
-
-            if(message.body === '!'){
-                await client.sendText(message.from, 'O "!" é o iniciador de comandos, em dúvida dos comandos existentes digite "!help"')
-
-
-
-                await client.getAllGroups().then(
-                    groups => groups.map((group => {
-                        if(group.name == 'AutTest'){
-                            console.log(group)
-                        }
-                    })
-                        
-                    )
-                )
-
-                await client.sendText('120363048680196034@g.us', "Teste!")
-            }
-
         })
     }
 

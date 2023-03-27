@@ -1,129 +1,97 @@
-import mysql from 'mysql2'
+import {createPool, Pool, PoolConnection} from 'mysql2/promise'
 import { resolve } from 'path';
 
 
 class DataBase{ 
 
-    constructor(config) {
-        this.connection = mysql.createConnection(config);
-    }
+    private pool: Pool;
 
-    connect() {
-        return new Promise((resolve, reject) => {
-            this.connection.connect(err => {
-                if (err) {
-                    reject(err);
-                } else {
-                    console.log('Conectado ao banco de dados!');
-                    resolve();
-                }
-            });
+    constructor() {
+        this.pool = createPool({
+            host: 'localhost',
+            user: 'root',
+            password: '',
+            database: 'whatsappbot',
+            connectionLimit: 1000000000,
+            namedPlaceholders: true
+
         });
     }
 
-    disconnect() {
-        return new Promise((resolve, reject) => {
-            this.connection.end(err => {
-                if (err) {
-                    reject(err);
-                } else {
-                    console.log('Conexão encerrada.');
-                    resolve();
-                }
-            });
-        });
+    public async getConnection(): Promise<PoolConnection> {
+        return await this.pool.getConnection();
     }
 
-    insertDB(dataInfo){
+    public async executeQuery(sql: string, values?: any[]): Promise<any>{
+        const connection = await this.getConnection();
+        try{
+            const [rows] = await connection.execute(sql, values);
+            return rows
+        } catch (err) {
+            console.error(err);
+        } finally {
+            connection.release;
+        }
 
+    }
+
+    public async readDailyReport(table: string, startIndex: Number, endIndex: Number): Promise<any>{
+        const sql = `SELECT * FROM ${table} ORDER BY id DESC LIMIT 1`;
+        const result =  await this.executeQuery(sql);
+        const value = result.map(row => Object.values(row));
+        let allWorkingOk = true;
+        let affects = [];
+        let notAffects = [];
+        const removedArray = value.splice(0, 1)[0];
+        const newResult: String = value.concat(removedArray);
+        for(let i = startIndex; i <= endIndex; i++) {
+            if(newResult[i].includes('Afeta o negócio')){
+                allWorkingOk = false;
+                affects.push(newResult[i], newResult[i + 1]);
+            } 
+
+            if(newResult[i].includes('Não afeta o negócio')){
+                allWorkingOk = false;
+                notAffects.push(newResult[i], newResult[i + 1]);
+            }
+    }
+        return ({allWorkingOk, affects, notAffects})
+
+    }
+
+    public async getDate(table: string){
+        const sql = `SELECT gc_date FROM ${table} ORDER BY id DESC LIMIT 1`
+        return await this.executeQuery(sql)
+    }
+
+    public async getColumns(table: String) {
+        const results = await this.executeQuery(`DESCRIBE ${table}`);
+        let columns = results.map(result => result.Field);
+        return columns;
+    }
+
+    public async insertColumns(table: String, values: Array<String>) {
+        const columns = await this.getColumns(table)
+
+
+        const query = `INSERT INTO ${table} (${columns.slice(1).join(', ')}) VALUES (${values});`;
+
+        console.log(query)
+
+        await this.executeQuery(query)
+        console.log("Query executada");
+    
+    }
+
+
+
+    public async insertData(table: string, data: any): Promise<Any>{
+        console.log(data)
+        const sql = `INSERT INTO ${table} (Starttime, Email, CentraldeCaptacaoEAD, DescricaodoproblemaCentraldeCaptacaoEAD, Webclass, DescricaodoproblemaWebclass, WebServicesSydle, DescricaodoproblemaWebServicesSydle, GSuite, DescricaodoproblemaGSuite, Lyceum, DescricaodoproblemaLyceum, LyceumApiBoleto, DescricaodoproblemaLyceumApiBoleto, MundoAzul, DescricaodoproblemaMundoAzul, Plug, DescricaoodoproblemaPlug, PortalEAD, DescricaoodoproblemaPortalEAD, SistemasTerceiros, DescricaodoproblemaSistemasTerceiros, SitesEADePresencial, DescricaodoproblemaSitesEADePresencial, StudeoFront, DescricaodoproblemaStudeoFront, StudeoMonitoramentoBigIP, DescricaodoproblemaStudeoMonitoramentoBigIP, StudeoProducaoLogin, DescricaodoproblemaStudeoProducaoLogin, StudeoProducaoLogineDisciplina, DescricaodoproblemaStudeoProducaoLogineDisciplina, UniversoEAD, DescricaodoproblemaUniversoEAD, FirewallCampusCorumbaMemoriaLinksdeinternetSwitches, ProblemasemCorumba, FirewallCampusCuritibaMemoriaLinksdeinternetSwitches, ProblemasemCuritiba, FirewallCampusLondrinaMemoriaLinksdeinternetSwitches, ProblemasemLondrina, FirewallCampusMaringaMemoriaLinksdeinternetSwitches, ProblemasemMaringa, FirewallCampusPontaGrossaMemoriaLinksdeinternetSwitches, ProblemasemPontaGrossa, FirewallDataCenterMaringaMemoriaLinksdeinternet, ProblemasemFirewallDatacenter, InfraDatacenterBateriasHardwareCamerasSistemasdeprotecaoGerador, ProblemasemInfraDatacenter) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        await this.executeQuery(sql, data);
         
-
-        const dataArray = ['Starttime','Email', 'Name', 'CentraldeCaptacaoEAD', 'DescricaodoproblemaCentraldeCaptacaoEAD', 'Webclass', 'DescricaodoproblemaWebclass', 'WebServicesSydle', 'DescricaodoproblemaWebServicesSydle','GSuite', 'DescricaodoproblemaGSuite','Lyceum', 'DescricaodoproblemaLyceum','LyceumApiBoleto','DescricaodoproblemaLyceumApiBoleto', 'MundoAzul','DescricaodoproblemaMundoAzul', 'Plug', 'DescricaoodoproblemaPlug', 'PortalEAD','DescricaoodoproblemaPortalEAD', 'SistemasTerceiros','DescricaodoproblemaSistemasTerceiros', 'SitesEADePresencial', 'DescricaodoproblemaSitesEADePresencial', 'StudeoFront', 'DescricaodoproblemaStudeoFront', 'StudeoMonitoramentoBigIP','DescricaodoproblemaStudeoMonitoramentoBigIP', 'StudeoProducaoLogin','DescricaodoproblemaStudeoProducaoLogin','StudeoProducaoLogineDisciplina', 'DescricaodoproblemaStudeoProducaoLogineDisciplina','UniversoEAD','DescricaodoproblemaUniversoEAD','FirewallCampusCorumbaMemoriaLinksdeinternetSwitches', 'ProblemasemCorumba', 'FirewallCampusCuritibaMemoriaLinksdeinternetSwitches', 'ProblemasemCuritiba','FirewallCampusLondrinaMemoriaLinksdeinternetSwitches', 'ProblemasemLondrina', 'FirewallCampusMaringaMemoriaLinksdeinternetSwitches', 'ProblemasemMaringa', 'FirewallCampusPontaGrossaMemoriaLinksdeinternetSwitches', 'ProblemasemPontaGrossa', 'FirewallDataCenterMaringaMemoriaLinksdeinternet','ProblemasemFirewallDatacenter', 'InfraDatacenterBateriasHardwareCamerasSistemasdeprotecaoGerador', 'ProblemasemInfraDatacenter']
-
-        const tableName = 'my_table';
-
-        const dataObject = {};
-
-        dataArray.forEach((column, index) => {
-            dataObject[column] = dataInfo[index]
-            })
-                        
-                        
-        const query = `INSERT INTO ${tableName} SET ?`;
-            this.connection.query(query,dataObject, (err, results, fields) => {
-                    if(err) throw err;
-                        console.log("Dados inseridos")
-                    })
-
     }
-
-    getToday() {
-        return new Promise((resolve, reject) => {
-            const query = "SELECT Starttime FROM my_table ORDER BY id DESC LIMIT 1";
-            this.connection.query(query, (err, rows) => {
-                if(err) {
-                    reject(err)
-                }
-                else {
-                    resolve(rows)
-                }
-            })
-        })
-
-    }
-
-    searchInfo(startIndex: Number, endIndex: Number) {
-        return new Promise((resolve, reject) => {
-            const query = "SELECT * FROM my_table ORDER BY id DESC LIMIT 1";
-            this.connection.query(query, (err, rows) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    let allWorkingOk = true;
-                    let affects = [];
-                    let notAffects = [];
-                    const result = rows.map(row => Object.values(row));
-                    const removedArray = result.splice(0, 1)[0];
-                    const newResult: String = result.concat(removedArray);
-                    // console.log(newResult)
-                    // console.log(startIndex)
-                    // console.log(endIndex)
-                    for (let i: Number = startIndex; i <= endIndex; i++) {
-                        console.log(newResult[i] + '\t' + typeof
-                        (newResult[i]) + '\t' + newResult[i].length)
-
-
-                        if(newResult[i].includes("Afeta o negócio")){
-                            console.log("Chegou aqui part 2")
-                            allWorkingOk = false;
-                            affects.push(newResult[i], newResult[i + 1]);
-                        } 
-
-                        if(newResult[i].includes("Não afeta o negócio")){
-                            console.log("Chegou aqui")
-                            allWorkingOk = false;
-                            notAffects.push(newResult[i], newResult[i + 1]);
-                        }
-                    }
-                    // console.log(affects);
-                    // console.log(notAffects);
-                    // console.log(allWorkingOk);
-                    resolve({ result: allWorkingOk, affects, notAffects });
-                }
-            });
-        });
-    }
-
 
 }
 
-const config = {
-
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'whatsappbot'
-
-}
-
-export default new DataBase(config)
+export default new DataBase()

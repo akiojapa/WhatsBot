@@ -82,7 +82,7 @@ class App {
 
 
 
-            if(message.body === '!RS' || message.body === '!rs' || message.body === '!p' || message.body === '!P'){
+            if(['!RS', '!P'].includes(message.body.toUpperCase())){
                 try {
                 let date = await db.getDate('general_checklist')
                 console.log(date)
@@ -148,7 +148,7 @@ class App {
             
         }
 
-            if(message.body === '!help' || message.body === '!HELP' || message.body == '!Help'){
+            if(message.body.toUpperCase() === '!HELP'){
                 await client.sendText(message.from, 'Aqui está a lista de comandos disponíveis: \n !rs - Último report diário realizado. \n !p - Demonstração do sistema com problemas \n !(data no formato dd/mm)')
             }
         })

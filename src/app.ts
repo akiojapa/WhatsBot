@@ -53,7 +53,7 @@ class App {
 
 
 
-        function formatMessage(result, allWorkingOk, affects, notAffects) {
+        function formatMessage(result, allWorkingOk, affects, notAffects, withObservation) {
 
             if (allWorkingOk) {
                 return `${result} ✅`;
@@ -71,7 +71,13 @@ class App {
                     for (let i = 0; i < notAffects.length; i = i + 2) {
                         message += `\n\t🟠 ${notAffects[i + 1]}`;
                     }
-                    message += "\n\t\t" + `${notAffects.length <= 2 ? ' **Não afeta o negócio.*' : ' **Não afetam o negócio.**'}`;
+                    message += "\n\t\t" + `${notAffects.length <= 2 ? ' **Não afeta o negócio.**' : ' **Não afetam o negócio.**'}`;
+                }
+                if (withObservation.length !== 0) {
+                    for (let i = 0; i < withObservation.length; i = i + 2) {
+                        message += `\n\t🟡 ${withObservation[i + 1]}`;
+                    }
+                    message += "\n\t\t" + `${withObservation.length <= 2 ? ' **Funcionando com observação.**' : ' **Funcionando com obeservações.**'}`;
                 }
 
                 return message;
@@ -85,19 +91,16 @@ class App {
             if(message.body === '!RS' || message.body === '!rs' || message.body === '!p' || message.body === '!P'){
                 try {
                 let date = await db.getDate('general_checklist')
-                console.log(date)
                 let mens: String = '';
 
                 let aux = await db.readDailyReport('general_checklist',2,33)
-                mens = formatMessage('    *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects)
-                console.log(aux.allWorkingOk)
+                mens = formatMessage('    *•Aplicações (BlazeMeter, Zabbix, Outros)📱- STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects, aux.withObservation)
             
                 aux = await db.readDailyReport('general_checklist',34,43)
-                mens += '\n\n' + formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects)
-                console.log(mens)
+                mens += '\n\n' + formatMessage('    *•Conectividade (Firewall, Links Campus) 📡 - STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects, aux.withObservation)
                 
                 aux = await db.readDailyReport('datacenter_checklist',2,19)
-                mens += '\n\n' + formatMessage('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects)
+                mens += '\n\n' + formatMessage('    *•Datacenter (Gerador, Links DC, SMH, Nobreaks) 💾 - STATUS:*', aux.allWorkingOk, aux.affects, aux.notAffects, aux.withObservation)
                 
                 await client.sendText(message.from, '*Report Diário do Relatório de Serviços TI Unicesumar (' + date[0].gc_date + ')📋:* \n\n' + mens)
             } catch(err) {
@@ -111,8 +114,6 @@ class App {
                 try{
                     let data: Array<String> = []
                     let aux = ''
-                    console.log(message.body)
-                    console.log(message.body.length)
                     for(let i = 0; i < message.body.length; i++){
                     if(data.length < 50){
                         if(message.body[i] != '\t' ){
@@ -128,15 +129,16 @@ class App {
                     }
                 }
                 console.log(data)
+                console.log(data.length)
                 if (data.length > 22){
-                    data.splice(42)
+                    data.splice(43)
+                    console.log(data.length)
                     db.insertColumns('general_checklist', data)
                     await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
                 }
                 else{ 
                     data.splice(0,2)
                     data.splice(1,1)
-                    console.log(data)
                     db.insertColumns('datacenter_checklist', data)
                     await client.sendText(message.from, '*Os dados foram inseridos com sucesso no banco de dados*\n\n        Caso queira visualizar a nova formatação digite: !rs')
                 }

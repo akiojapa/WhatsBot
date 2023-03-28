@@ -42,20 +42,32 @@ class DataBase{
         let allWorkingOk = true;
         let affects = [];
         let notAffects = [];
+        let withObservation = [];
         const removedArray = value.splice(0, 1)[0];
         const newResult: String = value.concat(removedArray);
         for(let i = startIndex; i <= endIndex; i++) {
-            if(newResult[i].includes('Afeta o negócio')){
+
+
+            if (newResult[i].includes('Afeta o negócio') || newResult[i].includes('Afeta operação')) {
                 allWorkingOk = false;
                 affects.push(newResult[i], newResult[i + 1]);
-            } 
 
-            if(newResult[i].includes('Não afeta o negócio')){
+            }
+
+            if (newResult[i].includes('Não afeta o negócio') || newResult[i].includes('Não afeta operação')) {
                 allWorkingOk = false;
                 notAffects.push(newResult[i], newResult[i + 1]);
+
             }
+
+            if(newResult[i].includes('com observações')){
+                                allWorkingOk = false;
+                withObservation.push(newResult[i], newResult[i + 1]);
+                
+            }
+        
     }
-        return ({allWorkingOk, affects, notAffects})
+        return ({allWorkingOk, affects, notAffects, withObservation})
 
     }
 
